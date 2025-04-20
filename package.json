@@ -4,6 +4,8 @@
   "description": "Sidekick is a browsing companion",
   "main": "content-script.js",
   "scripts": {
+    "build": "esbuild content-script.js --bundle --outfile=dist/content-script.bundle.js --format=iife",
+    "watch": "esbuild content-script.js --bundle --outfile=dist/content-script.bundle.js --format=iife --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,5 +14,8 @@
   "dependencies": {
     "@11labs/client": "^0.1.3",
     "@mozilla/readability": "^0.6.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.2"
   }
 }
