@@ -1,0 +1,15 @@
+{
+  "name": "sidekick",
+  "version": "1.0.0",
+  "description": "Sidekick is a browsing companion",
+  "main": "content-script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@11labs/client": "^0.1.3"
+  }
+}

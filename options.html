@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sidekick Options</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            min-width: 300px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sidekick Settings</h1>
+    <label for="agentId">ElevenLabs Agent ID:</label>
+    <input type="text" id="agentId" placeholder="Enter your Agent ID here">
+    <button id="saveButton">Save</button>
+    <div id="status"></div>
+
+    <script src="options.js"></script>
+</body>
+</html>

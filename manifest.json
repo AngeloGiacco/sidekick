@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Sidekick - Contextual Browsing Assistant",
+  "version": "0.1.0",
+  "description": "Interacts with web pages using ElevenLabs Conversational AI.",
+  "permissions": ["storage", "tabs", "webNavigation", "scripting"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["images/*.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
