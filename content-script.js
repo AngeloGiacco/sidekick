@@ -1,3 +1,5 @@
+import { Readability } from '@mozilla/readability';
+
 console.log("Content Script Loaded V2");
 
 const WIDGET_SCRIPT_URL = "https://elevenlabs.io/convai-widget/index.js";
@@ -60,7 +62,6 @@ function addClientToolsListener() {
     widgetElement.dataset.clientToolsListenerAdded = 'true'; // Mark listener as added
 }
 
-
 async function ensureWidgetInjected() {
     const existingWidget = document.querySelector(WIDGET_TAG_NAME);
     if (widgetInjected || existingWidget) {
@@ -111,8 +112,27 @@ async function ensureWidgetInjected() {
     }
 }
 
-function extractMainText() {
-    console.log("Attempting to extract main text...");
+function extractMainTextWithReadability() {
+    const documentClone = document.cloneNode(true);
+    
+    try {
+        const reader = new Readability(documentClone);
+        const article = reader.parse();
+
+        if (article && article.textContent) {
+            let mainText = article.textContent;
+            mainText = mainText.replace(/\s\s+/g, ' ').trim();
+            return mainText;
+        }
+    } catch (error) {
+        console.error("Error using Readability.js:", error);
+    }
+    console.warn("Readability.js failed. Falling back to basic extraction.");
+    return extractMainTextFallback();
+}
+
+function extractMainTextFallback() {
+    console.log("Using fallback extraction method...");
     //remove noise
     const selectorsToRemove = 'nav, footer, header, aside, script, style, noscript, iframe, [role="navigation"], [role="banner"], [role="complementary"], [aria-hidden="true"], #sidebar, .sidebar';
     const bodyClone = document.body.cloneNode(true);
@@ -171,14 +191,12 @@ async function sendContextToWidget(text) {
     }
 }
 
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log("Message received in CS:", message);
 
     if (message.action === "extractText") {
         ensureWidgetInjected().then(() => {
             if (widgetInjected) {
-                 const text = extractMainText();
+                 const text = extractMainTextWithReadability();
                  if (text) {
                     sendContextToWidget(text);
                  } else {
@@ -188,11 +206,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 console.warn("Widget injection failed, cannot send context.");
             }
         });
-        return false;
+        return true; // Keep channel open for async response
     }
-    // Added a check for unknown actions for better debugging
-    // console.warn("Unknown message action received:", message.action);
-    // return false;
+    return false;
 });
 
 if (document.readyState === 'complete' || document.readyState === 'interactive') {
