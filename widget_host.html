@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Widget Host</title>
+    <style>
+        /* Basic styling to make the iframe content visible and take space */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%; /* Ensure body takes full height */
+            overflow: hidden; /* Prevent scrollbars on body */
+        }
+        elevenlabs-convai {
+            display: block; /* Ensure it's treated as a block element */
+            width: 100%;
+            height: 100%; /* Make widget fill the iframe */
+            border: none; /* Remove default border if any */
+        }
+    </style>
+</head>
+<body>
+    <!-- The widget element will be dynamically created here -->
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const agentId = urlParams.get('agentId');
+        const widgetTagName = 'elevenlabs-convai';
+        const widgetScriptUrl = 'https://elevenlabs.io/convai-widget/index.js';
+        let widgetElement = null; // Store reference to the widget element
+
+        // Function to send messages TO the parent (content script)
+        function sendMessageToParent(message) {
+            // Add source identifier
+            message.source = 'convai-widget-iframe';
+            // In production, use the specific origin of the parent instead of '*'
+            window.parent.postMessage(message, '*');
+        }
+
+        if (agentId) {
+            console.log("Widget Host: Loading widget script for Agent ID:", agentId);
+            const script = document.createElement('script');
+            script.src = widgetScriptUrl;
+            script.async = true;
+            script.type = "text/javascript";
+
+            script.onload = () => {
+                 console.log("Widget Host: Script loaded. Waiting for element definition.");
+                 customElements.whenDefined(widgetTagName).then(() => {
+                    console.log("Widget Host: Element defined. Creating widget.");
+                    widgetElement = document.createElement(widgetTagName);
+                    widgetElement.setAttribute('agent-id', agentId);
+                    // Set variant or other attributes if needed
+                    // widgetElement.setAttribute('variant', 'full');
+
+                    // Add listener for client tool calls BEFORE adding to DOM
+                    widgetElement.addEventListener('elevenlabs-convai:call', (event) => {
+                        console.log("Widget Host: Intercepted 'elevenlabs-convai:call'", event.detail);
+                        if (event.detail && event.detail.type === 'tool' && event.detail.config?.toolName) {
+                             console.log(`Widget Host: Forwarding tool call '${event.detail.config.toolName}' to parent.`);
+                            // Forward the request to the content script
+                            sendMessageToParent({
+                                action: 'callClientTool',
+                                payload: {
+                                    tool: event.detail.config.toolName,
+                                    params: event.detail.config.params || {}
+                                }
+                            });
+                        } else {
+                            console.warn("Widget Host: Received 'elevenlabs-convai:call' but not a recognized tool call format.", event.detail);
+                        }
+                    });
+
+                    document.body.appendChild(widgetElement);
+                    console.log("Widget Host: Widget element added to body and listener attached.");
+
+                 }).catch(err => {
+                    console.error("Widget Host: Error waiting for element definition:", err);
+                 });
+            };
+            script.onerror = (err) => {
+                 console.error("Widget Host: Failed to load widget script:", err);
+                 // Optionally display an error message in the iframe body
+                 document.body.textContent = 'Error loading widget script.';
+            };
+            document.head.appendChild(script);
+
+        } else {
+            console.error("Widget Host: Agent ID not provided in URL parameters.");
+             document.body.textContent = 'Error: Agent ID missing.'; // Display error
+        }
+
+        // Listener for messages FROM parent window (content script)
+        window.addEventListener('message', (event) => {
+           // Basic security check: ensure message is from parent
+           // In production, check event.origin against chrome.runtime.getURL('') or similar
+           if (event.source !== window.parent) {
+               console.warn("Widget Host: Ignoring message from non-parent source:", event.source);
+               return;
+           }
+
+           console.log("Widget Host: Received message:", event.data);
+
+           if (event.data && event.data.action === 'sendContext') {
+               if (widgetElement && typeof widgetElement.sendContextualUpdate === 'function') {
+                   console.log("Widget Host: Sending context to widget element:", event.data.text.substring(0,100)+"...");
+                   try {
+                        widgetElement.sendContextualUpdate(event.data.text);
+                   } catch (error) {
+                        console.error("Widget Host: Error calling sendContextualUpdate:", error);
+                   }
+               } else {
+                    console.warn("Widget Host: Widget element or sendContextualUpdate not ready when receiving context.");
+                    // Optionally queue the context update or notify the parent
+               }
+           }
+        });
+
+    </script>
+</body>
+</html>
