@@ -18,7 +18,7 @@
     }
   ],
   "action": {
-    "default_icon": "favicon.svg"
+    "default_icon": "images/favicon.svg"
   },
   "web_accessible_resources": [
     {
